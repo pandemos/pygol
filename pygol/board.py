@@ -1,10 +1,12 @@
 import cell
+import rules
 
 class Board(object):
 
-    def __init__(self, width = 0, height = 0, iteration=0):
+    def __init__(self, width = 0, height = 0, iteration=0, rules=None):
         self.width = width
         self.height = height
+        self.rules = rules
 
         # Good example of this approach working:
         # I had initially forgotten to change this from `= 0` to `= iteration`
@@ -15,6 +17,10 @@ class Board(object):
         self.cells = [[cell.DeadCell() for x in range(width)] for y in range(height)]
     
     def setCellAt(self, x, y, cell):
+        """ Deprecated """
+        return self.set_cell_at(x, y, cell)
+
+    def set_cell_at(self, x, y, cell):
 
         # We don't observe the magical Python indexing here. x and y must be absolute
         # indices into the board.
@@ -24,6 +30,10 @@ class Board(object):
         self.cells[y][x] = cell
 
     def cellAt(self, x, y):
+        """ Deprecated """
+        return self.cell_at(x, y)
+
+    def cell_at(self, x, y):
 
         # We don't observe the magical Python indexing here. x and y must be absolute
         # indices into the board.
@@ -35,10 +45,18 @@ class Board(object):
     def step(self):
         self.iteration += 1
 
+        if self.rules is None:
+            self.rules = rules.ConwayRules()
+        self.rules.apply_to(self)
+
     def reset(self):
         self.iteration = 0
 
     def livingNeighbors(self, x, y):
+        """ Deprecated """
+        return self.living_neighbors(x, y)
+
+    def living_neighbors(self, x, y):
         neighbors = [
             self.neighborAt(self.f_filter_above(x, y), self.f_at_above(x, y)),
             self.neighborAt(self.f_filter_below(x, y), self.f_at_below(x, y)),
@@ -53,34 +71,49 @@ class Board(object):
 
     def f_filter_above(self, x, y):
         return lambda: y == 0
+
     def f_at_above(self, x, y): 
         return lambda: self.cellAt(x, y-1)
+
     def f_filter_below(self, x, y):
         return lambda: y == self.height-1
+
     def f_at_below(self, x, y): 
         return lambda: self.cellAt(x, y+1)
+
     def f_filter_left(self, x, y):
         return lambda: x == 0
+
     def f_at_left(self, x, y): 
         return lambda: self.cellAt(x-1, y)
+
     def f_filter_right(self, x, y):
         return lambda: x == self.width-1
+
     def f_at_right(self, x, y): 
         return lambda: self.cellAt(x+1, y)
+
     def f_filter_UL(self, x, y):
         return lambda: x == 0 or y == 0
+
     def f_at_UL(self, x, y): 
         return lambda: self.cellAt(x-1, y-1)
+
     def f_filter_UR(self, x, y):
         return lambda: x == self.width-1 or y == 0
+
     def f_at_UR(self, x, y): 
         return lambda: self.cellAt(x+1, y-1)
+
     def f_filter_LL(self, x, y):
         return lambda: x == 0 or y == self.height-1
+
     def f_at_LL(self, x, y): 
         return lambda: self.cellAt(x-1, y+1)
+
     def f_filter_LR(self, x, y):
         return lambda: x == self.width-1 or y == self.height-1
+
     def f_at_LR(self, x, y): 
         return lambda: self.cellAt(x+1, y+1)
 
@@ -89,3 +122,14 @@ class Board(object):
             return cell.Dead
         return f_at().mortality
 
+    def map_rows(self, f):
+        return [f(y) for y in range(self.height)]
+
+    def map_columns(self, f):
+        return [f(x) for x in range(self.width)]
+
+    def map(self, f):
+        return self.map_rows(lambda y: self.map_columns(lambda x: f(x, y, self.cell_at(x, y))))
+
+    def for_each(self, f):
+        self.map(f)
