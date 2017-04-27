@@ -59,11 +59,38 @@ class RleRowFormat(object):
     def serialize(self):
         result = []
 
+        runsize = 1
+
         for x in range(self.board.width):
             this_cell = self.board.cell_at(x, self.y)
             next_cell = self.board.cell_at(x+1, self.y) if x < self.board.width-1 else None
-            result.append(RleCellFormat(this_cell).serialize())
+            if next_cell is None:
+                if runsize > 1:
+                    result.append("{0}{1}".format(runsize, RleCellFormat(this_cell).serialize()))
+                else:
+                    result.append(RleCellFormat(this_cell).serialize())
+            elif this_cell.mortality == next_cell.mortality:
+                runsize += 1
+            else:
+                if runsize > 1:
+                    result.append("{0}{1}".format(runsize, RleCellFormat(this_cell).serialize()))
+                    runsize = 1
+                else:
+                    result.append(RleCellFormat(this_cell).serialize())
+
+        while len(result) > 0 and result[-1].endswith('b'):
+            result = result[:-1]
 
         endchar = '!' if self.last else '$'
         return ''.join(result) + endchar
 
+class RleBoardFormat(object):
+
+    def __init__(self, b):
+        self.board = b
+
+    def serialize(self):
+        result = [RleHeaderFormat(self.board.width, self.board.height, self.board.rules.rule_string).serialize()]
+        for y in range(self.board.height):
+            result.append(RleRowFormat(self.board, y, last=y==self.board.height-1).serialize())
+        return ''.join(result)

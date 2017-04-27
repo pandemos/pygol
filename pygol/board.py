@@ -3,10 +3,12 @@ import rules
 
 class Board(object):
 
-    def __init__(self, width = 0, height = 0, iteration=0, rules=None):
+    def __init__(self, width = 0, height = 0, iteration=0, r=None):
         self.width = width
         self.height = height
-        self.rules = rules
+        self.rules = r
+        if self.rules is None:
+            self.rules = rules.ConwayRules()
 
         # Good example of this approach working:
         # I had initially forgotten to change this from `= 0` to `= iteration`
